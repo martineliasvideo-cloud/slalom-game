@@ -13,7 +13,7 @@
 <!-- ===================== FIREBASE ===================== -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
+import { getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
          createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
          updateProfile } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp }
@@ -32,6 +32,13 @@ const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+
+// Handle redirect result (after Google login redirect)
+getRedirectResult(auth).then(async (result) => {
+  if (result && result.user) {
+    console.log("[Auth] Redirect result:", result.user.email);
+  }
+}).catch((e) => { console.warn("[Auth] Redirect error:", e.message); });
 
 // ── Guardar progreso en Firestore ──
 async function saveProgressToCloud(uid) {
@@ -97,7 +104,9 @@ onAuthStateChanged(auth, async (user) => {
 window.authLoginGoogle = async function() {
   try {
     setAuthError('');
-    await signInWithPopup(auth, googleProvider);
+    // Use redirect on mobile/GitHub Pages, popup on desktop
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobile) { await signInWithRedirect(auth, googleProvider); } else { await signInWithPopup(auth, googleProvider); }
   } catch(e) { setAuthError('Error con Google: ' + e.message); }
 };
 
