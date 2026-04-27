@@ -3829,9 +3829,10 @@ navTo = function(section) {
 };
 
 // Register service worker for PWA
+// Service worker disabled
 if('serviceWorker' in navigator){
-  window.addEventListener('load', function(){
-    navigator.serviceWorker.register('/sw.js');
+  navigator.serviceWorker.getRegistrations().then(function(registrations){
+    for(let r of registrations){ r.unregister(); }
   });
 }
 </script>
